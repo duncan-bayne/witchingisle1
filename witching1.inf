@@ -1,0 +1,1487 @@
+!==============================================================================!
+!
+! Copyright Duncan Bayne, 2010.
+! This work of interactive fiction may be redistributed under the
+! terms of the Creative Commons Attribution-ShareAlike 3.0 licence.
+!
+! See:
+!
+! http://creativecommons.org/licenses/by-sa/3.0/
+!
+! ... for details.  
+!
+!==============================================================================!
+
+!==============================================================================!
+!   Every game needs a Story and Headline, and must include Parser and VerbLib.
+!   As DM §7 except: Release, Serial and MAX_SCORE defined.
+!
+Constant Story "Witching Isle: Part 1^^";
+
+Release  3;
+Serial  "000001";
+
+Constant MAX_SCORE 16;
+Constant MAX_CARRIED 12;
+
+Include "Parser";
+Include "VerbLib";
+
+Attribute cut;
+Attribute in_wall;
+Attribute disembarkable;
+Attribute aggressive;
+Attribute searched;
+Attribute hungry;
+Attribute tied;
+Attribute dead;
+Attribute solved;
+
+!==============================================================================!
+!   Every game needs an Initialise routine, whose primary role is to set the
+!   player's location (i.e. you) at the start of the game.
+!
+[ Initialise;
+    
+    ! original location of player
+    location = Golden_Beach;
+    score = 1;
+    
+    ! initial inventory
+    move Snuff_Box to player;    
+    
+    ! initial locations
+    move Rusty_Can to Cave;
+    move Waterskin to Cave;
+    move Pick_Axe to Mine_Face;
+    move Exotic_Flowers to Flower_Field;
+    move Caustic_Soda to Canning_Shack;
+    move Serrated_Knife to Canning_Shack;
+    move Pliers to Canning_Shack;
+    move Boat to Jetty; 
+    move Magpie to Windswept_Path;
+    move Fishing_Line to boat;
+    move Stones to Plowed_Field;
+    move Fish to Cold_Beach;
+    move Hollow_Tree to Hollow_Tree_Hill;
+    move Oak to Windswept_Path;
+    move Fresh_Water_Pool to Island;
+    move Troll to Rickety_Bridge;
+    move Furrows to Plowed_Field;
+    
+    ! the coins are in the chest guarded by the Zombie_Crew
+    move Zombie_Crew to Wreck;
+    move Treasure_Chest to Wreck;
+    move Coins to Treasure_Chest;
+    
+    ! pipe equipment is in smoking tin in boat shed
+    move Pipe to Smoking_Tin;
+    move Matches to Smoking_Tin;
+    move Smoking_Tin to Boathouse;
+    
+    ! chalk can only be obtained with pick, if at Cliff_Face
+    move chalk to Cliff_Face;
+    
+    ! rope and bucket are held in well shaft
+    move Well_Shaft to Well;
+    move Rope to Well_Shaft;
+    move Bucket to Well_Shaft;    
+    
+    ! pendant, whistle and wire are in magpie's nest
+    move Pendant to Nest;
+    move Gold_Wire to Nest;
+    move Bosuns_Whistle to Nest;
+    move Nest to Windswept_Path;
+    
+    ! crown is in cairn which must be opened with ankh
+    move Crown to Cairn;
+    move Cairn to Cairn_Mound;
+    
+    "^^^^Nothing makes you agitated quite as quickly as boredom.  For several weeks now you've been living at 
+    your Grandmother's house, while your parents sort through her belongings.  Well, the term house is perhaps a bit 
+    grand for the place: it's a small cottage, painted in a style that could only be your Gran's.  Pink roof, turquoise 
+    door, lopsided chimney and a band of flowers (painted, you understand, not real) under the eaves.^^The whole affair has been complicated
+    by the fact that Gran isn't really dead, she's just been 'presumed dead after being missing for seven years,' at least 
+    according to the letters to your parents that you've 'accidentally' opened.  Rumours have abounded as to the exact reason for her disapperance; the rumour judged most likely by popular opinion is that she went on one of her lengthy holidays, and simply chose never to return.  You have fond memories of her returning from those famous holidays, bringing weird and wonderful gifts of exotic shells, out-of-print books and fascinating wooden toys.^^After days of hearing your Mum and Dad bicker over which items are being sold, which are going into storage and which should be given away as heirlooms, you've retreated into the back garden with a pot of boiled sweets you found in the pantry.  Munching sweet after sweet, you doze off in the sun, sprawled in the grass with your head in your hands and a book propped up against a rock.^^To your surprise, you're not woken by another fight or a demand that you try on one more hideous, ill-fitting dress: instead, you blearily realise that your feet are wet.  Startled, you scramble upright, and discover to your horror that ill-fitting dresses have suddenly become the least of your troubles ...^^^^";
+    
+];
+
+!==============================================================================!
+!   As DM §20. PrintRank, if defined, is called when printing the score.
+!
+[ PrintRank;
+    print ", earning you the rank of ";
+    switch (score) {
+     0 to 3:   "Tourist.  You earn one point per item of treasure carried, and one point per major puzzle solved.";
+     4 to 6:   "Backpacker.  You earn one point per item of treasure carried, and one point per major puzzle solved.";
+     7 to 9:   "Apprentice Adventurer.  You earn one point per item of treasure carried, and one point per major puzzle solved.";
+     10 to 12:  "Adventurer.  You earn one point per item of treasure carried, and one point per major puzzle solved.";
+     13 to 15: "Grizzled Adventurer.  You earn one point per item of treasure carried, and one point per major puzzle solved.";
+     16:       "Hero.  You earn one point per item of treasure carried, and one point per major puzzle solved.";
+    } 
+];
+
+! TODO: ensure these are commented out; they're for debugging / testing only
+[ TestSub;
+    PlayerTo(Windswept_Path);    
+    
+    move Waterskin to real_location;
+    move Bucket to real_location;
+    move Rusty_Can to real_location;
+    move Waterskin to real_location;
+    move Pick_Axe to real_location;
+    move Exotic_Flowers to real_location;
+    move Caustic_Soda to real_location;
+    move Serrated_Knife to real_location;
+    move Pliers to real_location;
+    move Boat to real_location; 
+    move Magpie to real_location;
+    move Fishing_Line to real_location;
+    move Stones to real_location;
+    move Fish to real_location;
+    move Hollow_Tree to real_location;
+    move Oak to real_location;
+    move Fresh_Water_Pool to real_location;
+    move Smoking_Tin to real_location;
+    move Rope to real_location;
+    move Chalk to real_location;
+    move Pendant to real_location;
+    move Gold_Wire to real_location;
+    move Bosuns_Whistle to real_location;  
+    
+];
+Verb 'test' * noun -> Test;    
+
+[ BendSub;
+    if (noun == Gold_Wire) {
+     	if (IndirectlyContains(player, Pliers)) {
+       	    print "You carefully bend the wire into the shape of an ankh.^";
+       	    move Ankh to player;
+       	    remove Gold_Wire;
+       	    rtrue;
+     	} else {
+       	    "What, with your bare fingers?";
+     	}
+    } else {
+	"That makes no sense whatsoever.";
+    }
+];
+Verb 'bend' * noun -> Bend;
+
+[ PreserveSub;
+    if (noun == Fish) {
+     	if (IndirectlyContains(player, Caustic_Soda)) {
+	    if (IndirectlyContains(player, Fresh_Water)) {
+	      	print "You carefully mix the fish and caustic soda, then rinse the resultant goop with a lot of water.^";
+	      	move Lutefisk to player;
+	      	remove Fish;
+	      	remove Caustic_Soda;
+	      	remove Fresh_Water;
+	      	score = score + 1;
+	    } else {
+	     	print "You could preserve the fish, but with what would you rinse off the caustic soda?^";	 
+            }
+	} else {
+	    print "With what would you preserve it?^";
+	}
+    } else {
+    	print "I'm afraid you'll just have to go and find it, if it's there to be found.^";
+    }
+];
+Verb 'preserve' * noun -> Preserve;
+
+Class 	Treasure
+ with  	value 1,
+        after [;
+	 Take:
+	    score = score + self.value;
+	 Drop:
+	    score = score - self.value;
+	];
+
+Object 	Treasure_Chest "treasure chest"
+ with	
+	name 'treasure' 'chest',
+	description
+	    "A large wooden chest, soaked and barnacle encrusted.",
+	before [;
+	 open:
+	    if (Zombie_Crew has aggressive) {
+		print "As you reach for the chest, the zombie crew breaks ranks and grabs you.  Actually, the grabbing doesn't prove so bad; it's the holding underwater for half an hour that really gets to you.^";
+		deadflag = true;
+		rtrue;
+	    }
+	 take:
+	    if (Zombie_Crew has aggressive) {
+		print "As you reach for the chest, the zombie crew breaks ranks and grabs you.  Actually, the grabbing doesn't prove so bad; it's the holding underwater for half an hour that really gets to you.^";
+		deadflag = true;
+		rtrue;
+	    }
+	],
+ has	
+openable container static;
+
+Object 	Furrows "row of furrows"
+ with	
+	name 'furrows',
+	description
+	    "A row of recently plowed furrows.  The rich, thick soil is full of earthworms.",
+	after [;
+	 examine:
+	    if (Furrows hasnt searched) 
+	    {		
+	    	move Worms to Plowed_Field;
+		give Furrows searched;		
+	    }
+	],
+ has 	static;
+
+Object 	Zombie_Crew "zombie crew"
+ with	
+	name 'zombie' 'crew',
+	description 
+	    "A small crew of drowned crewmembers are faithfully replaying the roles they followed in life - cleaning, repairing and tarring a largely imaginary ship.",
+ has	
+aggressive static;
+
+Object 	Fresh_Water_Pool "fresh water pool"
+ with	
+	name 'fresh' 'water' 'pool',
+	before [;
+	 drink:
+	    print "You scoop some water up from the pool and drink it.  The fresh water here is fantastically pure and refreshing.";
+	    
+	 take:
+	    if (IndirectlyContains(player, Waterskin)) {
+		move Fresh_Water to Waterskin;
+		print "You collect some of the water in the waterskin.^";
+		rtrue;
+	    } else {
+		print "You scoop some of the water up in your hands, but find yourself wondering if it might be possible to come up with a more convenient arrangement for carrying it.^";
+		rtrue;
+	    }
+	],
+	description
+	    "A pool of clean fresh water.";
+
+Object 	Fresh_Water "litre of water"
+ with	
+	name 'water',
+	description
+	    "Around a litre of clean fresh water.",
+	before [;
+	 drink:
+	    print "You take a good swig from the waterskin.  The water now has a distinctly musty, tannin-laced flavour but is still quite potable.";
+	    rtrue;
+	],
+	after [;
+	 Drop:
+	    remove Fresh_Water;
+	];		
+
+Object 	Lutefisk "heap of lutefisk"
+ with	
+	name 'lutefisk',
+	description
+	    "A gelatinous heap of the Norweigan 'delicacy' called lutefisk.  'Oh Lutefisk, Oh Lutefisk, how pungent your aroma! Oh Lutefisk, Oh Lutefisk, you put me in a coma! You taste so strong, you look like glue, you smell just like an overshoe! Oh Lutefisk, now I suppose, I'll eat you as I hold my nose!' [Sung to the tune of Oh Christmas Tree]";
+
+Object 	Troll "troll"
+ with	
+	name 'troll',
+	description
+	    "A huge green Norweigan troll.  It is mottled green in colour and incredibly thin, clad in a few rags that may once have belonged in a more integral sense to a Jersey cow.  Ominously, this troll looks hungry - although you're not entirely certain, as your exposure to trolls limited to works of fiction and, you suspect, your year nine English teacher.",
+	life [;
+	 Give:
+	    if (noun == Lutefisk) {
+		print "The troll hungrily accepts your offer of a delicacy from his homeland.  He puts the disgusting pile of fish to one side and periodically takes a bite, munching slowly and noisily, a grin of obvious delight on his otherwise monstruous features.^";
+		remove Lutefisk;
+		Troll.description = 	"A huge green Norweigan troll.  It is mottled green in colour and incredibly thin, clad in a few rags that may once have belonged in a more integral sense to a Jersey cow.  This particular troll is contentedly munching on a pile of lutefisk.";
+		give Troll ~hungry;
+		rtrue;
+	    }
+	],
+ has	
+hungry animate static; 
+
+Object 	Cairn "cairn"
+ with	
+	name 'cairn',
+	description
+	    "A large stone cairn.  There is a small door in the Northern face, engraved with an ankh symbol which is in turn decorated with gold leaf.",
+	before [;
+	 open:
+	    if (Cairn hasnt solved) {
+		if (IndirectlyContains(player, Ankh) == false) {		       
+		    print "You heave the cairn door open.  As sunlight filters into the cairn you hear a bloodcurdling shriek, and a skeleton that was lying prone on the floor rolls over and stretches out a bony arm for your neck.^^Normally at this point your lightning-fast reflexes would save you with a roll or a leap, but you find that the sheer horror of being attacked by a lich has rendered your mind an ineffectual void of shrieking panic.^^Your last memories are of a glint of sunlight off the gold crown worn by the lich, then being dragged bodily inside the cairn, and the door slamming shut.^";
+		    deadflag = true;
+		    rtrue;
+		} else {
+		    print "You heave the cairn door open. As sunlight filters into the cairn you hear a bloodcurdling shriek, and a skeleton that was lying prone on the floor rolls over and stretches out a bony arm for your neck.^^Fortunately for your as-yet unconceived offspring, the lich recoils at the sight of your ankh, and crumbles to the floor in a pile of dust.  The crown he was wearing falls to the ground.^";		    
+		    give Cairn open;
+		    score = score + 1;
+		    give Cairn solved;
+		    rtrue;
+		}		    
+	    }				
+	],
+ has	
+openable container static;
+
+Object 	Note "note"
+ with	
+	name 'note',
+	description
+	    "A small yellowed paper note that reads 'troll, substantiv: et lop av overnaturlige vesener, som lever under broer og perpetually sulten.'";
+
+Object 	Worms "pile of worms"
+ with	
+	name 'worms',
+	description
+	    "A collection of fat, brown wriggling earthworms.";
+
+Object 	Hollow_Tree "hollow tree trunk"
+ with	
+	name 'tree' 'trunk',
+	after [;
+	 examine:
+	    if (Hollow_Tree hasnt searched) 
+	    {		
+	    	self.description = "An ancient hollow tree, dead for decades, with a small opening at ground level.";
+	    	move Fish_Hook to Hollow_Tree_Hill;
+	    	move Note to Hollow_Tree_Hill;
+		give Hollow_Tree searched;		
+	    }
+	],
+	description
+	    "You see a small note pinned to the inside of the trunk with an old hook.",
+ has 	static;
+
+Object 	Stones "pile of stones"
+ with	
+	name 'stones' 'stone',
+	description
+	    "A small pile of tiny, perfectly round stones.";
+
+Object 	Fish_Hook "hook"
+ with	
+	name 'hook',
+	description
+	    "A small fishing hook, slightly rusty but still sharp where it counts.";
+
+Object 	Fishing_Line "fishing line"
+ with	
+	name 'fishing' 'line',
+	description
+	    "A short length of fishing line, expertly coiled and tied.";
+
+Object 	Magpie "magpie"
+ with	
+	name 'magpie',
+	description
+	    "A large, sleek magpie with beautiful plumage and sharp, intelligent eyes.",
+	before [;
+	 Attack:
+	    print "The magpie flies up to a branch just out of reach.^";
+	    rtrue;       
+	 ThrowAt: "Haven't you got that the wrong way round?";
+	 ThrownAt:
+	    if (noun == stones) {
+	       	print "You hit the magpie with the small stones, driving it higher into the branches.^";
+	       	Magpie.description = "The magpie is now quite ruffled, and seems keen to keep its distance.";
+	       	give Magpie ~aggressive;
+	       	remove Stones;
+		
+	       	if (Magpie hasnt solved) {
+	       	    score = score + 1;
+		    give Magpie solved;
+	       	}
+	    } else {
+	      	print "Perhaps something a little more ... missile-like ... might have the desired effect.";
+            }
+	    rtrue;
+	],
+ has	
+aggressive static animate;
+
+Object 	Pliers "pair of pliers"
+ with	
+	name 'pliers',
+	description
+	    "An old pair of rusty but functional pliers.";
+
+Object 	Fish "fish"
+ with	
+	name 'fish',
+	description
+	    "There are several large, sedate-looking fish swimming a few inches below the surface of the water.",
+	before [;
+	 Take:
+	    if (Fish hasnt dead) {
+		if (IndirectlyContains(player, Fish_Hook)) {				  		     	
+		    if (IndirectlyContains(player, Fishing_Line)) {		     	
+		     	if (IndirectlyContains(player, Pendant)) {	
+		            if (IndirectlyContains(player, Worms)) {
+			      	print "You weight the hook with the pendant, attach it to the line, spear a worm on the hook ... and after several hours of excruciating boredom, reel in a fish!^";
+			      	Fish.description = "A large trout, which appears to have died of boredom at some point during the fishing experience.";
+			      	move Fish to player;
+				remove Worms;				
+			      	give Fish dead;
+			      	score = score + 1;
+			      	rtrue;
+			    } else {
+			     	print "The weighted hook sinks nicely with the pendant to weight it, but the fish seem quite uninterested in chowing down on a boring steel hook.^";
+			     	rtrue;
+			    }
+			} else {
+			    print "The hook floats languidly on the surface of the water, and utterly fails to attract the attention of the fish below.^";
+			    rtrue;
+	                }
+		    } else {
+		       	print "Dangling the hook in the water with your fingers brings you no luck.  You can't help but think that this isn't how you've seen other people catch fish.^";
+		       	rtrue;
+		    }
+		} else {
+		    print "You're not going to catch fish without a hook, are you?^";
+		    rtrue;
+		}
+	    }
+	];
+
+Object 	Pipe "pipe"
+ with	
+	name 'pipe',
+	description
+	    "A wooden sailor's pipe, packed with tobacco.",
+	before [;
+	 Burn:
+	    if (IndirectlyContains(player, Matches)) { 
+		print "You light the pipe, coughing and spluttering as it takes.  The tobacco glows feebly.^";
+		give Pipe light;
+	    } else {
+		print "You'll need some source of fire before you can light the pipe.^";		    
+	    }	
+	    rtrue;
+	 Drop:
+	    print "As you drop the pipe, it extinguishes. ";
+	    rfalse;
+	];
+
+Object 	Matches "book of matches"
+ with	
+	name 'matches',
+	description
+	    "A book of matches adorned with a picture of a grinning Welsh coal-miner.";
+
+Object 	Smoking_Tin "smoking tin"
+ with	
+	name 'smoking' 'tin',
+	description
+	    "A rusty old metal smoking tin with a faded picture of a lighthouse printed on either side.",
+	before [;
+	 Receive:
+	    if (noun == Pipe || noun == Matches) {
+		rfalse;
+	    } else {
+		print "The tin has a carefully shaped section for a pipe, and a book of matches.  Nothing else seems to fit properly.^";		 
+		rtrue;
+	    }
+        ],
+ has	
+container openable;
+
+Object 	Chalk "chalk piece"
+ with	
+	name 'chalk' 'piece',
+	description
+	    "A chunk of soft white chalk.",
+	before [;
+	 take:
+	    if (Chalk has in_wall) {
+		if (IndirectlyContains(player, Pick_Axe)) {
+		    print "You swing the pick axe and loosen a chunk of chalk.^";
+		    give Chalk ~in_wall;
+		    move Chalk to player;		    
+		    rtrue;
+		} else {
+		    print "The chalk is firmly stuck in the cliff face.  You'll need to remove it forceably and if at all possible carefully.^";
+		    rtrue;
+		}
+	    }
+	],
+ has 	in_wall;
+
+Object 	Well_Shaft "well shaft"
+ with	
+	name 'well' 'shaft',
+	description
+	    "A deep, seemingly bottomless shaft descending into the well.  A bucket and a rope are suspended down the shaft.",
+	before [;
+	 enter:
+	    print "To the surprise of an onlooking magpie, you manage to carefully descend into the shaft for around a dozen feet, clinging precariously to moss-encrusted stones, before one gives way and you tumble into the darkness.^^You have time to briefly reflect upon how lucky it'd be if this were a wishing well, before you meet a gruesome and deflating end at the bottom of the now-dry well.";
+	    deadflag = true;
+	    rtrue;
+	],
+	after [;
+	 examine:
+	    if (Well_Shaft hasnt searched) 
+	    {		
+	    	Well_Shaft.description = "A deep, seemingly bottomless shaft descending into the well.";
+	    	move Bucket to Well;
+	    	move Rope to Well;
+		give Well_Shaft searched;		
+	    }
+	],
+ has 	
+open static;
+
+Object 	Nest "nest"
+ with	
+	name 'nest',
+	description
+	    "You find several shiny objects in the nest, that must have been collected by the magpie.",
+	before [;
+	 examine:
+	    if (Magpie has aggressive) {
+		print "You stretch up towards the nest, but are promptly attacked by the highly aggressive magpie.  You drop down and run for cover as the magpie repeatedly dives at you.^";
+		rtrue;
+	    }
+	],
+	after [;
+	 examine:
+	    self.description = "A small but lovingly-constructed
+ 		magpie's nest.";
+	    if (Nest hasnt searched) 
+	    {
+	    	move Pendant to Windswept_Path;
+	    	move Gold_Wire to Windswept_Path;
+	    	move Bosuns_Whistle to Windswept_Path;
+		give Nest searched;		
+	    }	    
+	],
+ has	
+open static;
+
+Object 	Serrated_Knife "serrated knife"
+ with	
+	name 'serrated' 'knife',
+	description
+	    "A large serrated knife, made from stainless steel and still holding a reasonable cutting edge.";
+
+Object 	Caustic_Soda "jar of caustic soda"
+ with	
+	name 'caustic' 'soda',
+	description
+	    "A large glass jar, labelled 'Caustic Soda' and festooned with skull and crossbone symbols.";
+
+Object 	Oak "oak"
+ with	
+	name 'oak',
+	description
+	    "A gigantic windswept oak tree.  The tree is bent to the West from the sea breeze coming over the cliffs, but looks very healthy and well-rooted.",
+ has 	static;
+
+Object 	Rope "rope"
+ with	
+	name 'rope',
+	description 
+	    "A long length of rope, sodden but strong and trustworthy.",
+        before [;
+	 tie:
+	    if (Rope hasnt tied) {
+		if (real_location == Windswept_Path) {
+		    print "You securely fasten the rope to the oak and throw one end over the cliff.^";
+		    Rope.description = "A long length of rope, tied at one end to the windswept tree.  The other end is hanging over the cliff.";
+		    give Rope static;
+		    give Rope tied;
+		    move Rope to Windswept_Path;
+		    score = score + 1;
+		    rtrue;
+		}
+	    } else {
+		print "The rope is already securely fastened to the tree.";
+	    }
+	    
+	 take:
+	    if (Rope hasnt cut) {
+		if (IndirectlyContains(player, Serrated_Knife)) {
+		    print "You saw through the end of the rope, separating it from the bucket, then saw through the other end, separating it from the winch.^";
+		    score = score + 1;
+		    give rope cut;
+		    move Rope to player;		    
+		    rtrue;		      
+		} else {
+		    print "The bucket and rope are securely affixed to the winch.  You'll need something to separate them.^";			
+		    rtrue;
+		}
+	    }
+	];
+
+Object 	Boat "boat"
+ with	
+        name 'boat',
+	description
+	    "A tiny rowing-boat made from wood.  Long past its use-by date and leaking slowly but solidly through a myriad small holes.",
+        before [ way;
+	 Go: way = location.(noun.door_dir)();
+	    if (~~(way ofclass Sailable)) {
+		print "You can't sail a boat onto land.^";
+		return 2;
+	    }
+	    if (IndirectlyContains(player, Bucket)) {
+		print "You paddle the boat with one hand, using the other to bail frantically with the bucket.  You are sure you remember adventures being more dignified than this.^";
+		if (Boat hasnt solved) {
+		    score = score + 1;
+		    give Boat solved;
+		}
+		return 1;
+	    } else {
+		print "You start paddling, but the boat rapidly fills with water.  Without a suitable vessel for bailing, your feeble efforts to rid the boat of water fail and the boat sinks.  Stricken with hypothermia, you follow it a few minutes later.";
+		deadflag = true;
+		return 2;
+	    }
+        ],
+ has	
+enterable open static;
+
+Object 	Bucket "bucket"
+ with	
+	name 'bucket',
+	description
+	    "A large, hefty wooden bucket.",
+	before [;
+	 drop:
+	    if (IndirectlyContains(Boat, player)) {
+		print "You might want to reconsider that course of action.  The only thing standing between you and a watery grave is your frantic bailing with the bucket you seem so keen to discard.^";
+		rtrue;
+	    }
+	 take:
+	    if (Rope hasnt cut) {
+		if (IndirectlyContains(player, Serrated_Knife)) {
+		    print "You saw through the end of the rope, separating it from the bucket, then saw through the other end, separating it from the winch.^";
+		    score = score + 1;
+		    give rope cut;
+		    move Bucket to player;		    
+		    rtrue;		      
+		} else {
+		    print "The bucket and rope are securely affixed to the winch.  You'll need something to separate them.^";			
+		    rtrue;
+		}
+	    }
+	];
+
+
+Object 	Pick_Axe "pick axe"
+ with	
+	name 'pick' 'axe',
+	description 
+            "An old pick axe, rusted but still solid, with a stout hickory handle.";
+
+Object 	Rusty_Can "rusty can"
+ with	
+	name 'can',
+	description
+	    "An old empty can, heavily rusted.  The label on the front reads: '100% Pure Norsk Lutefisk. Ingredienser: fisk, natriumhydroksid.'  On the back there is an English label, which reads: 'Preserved Fish.  WARNING: May contain traces of fish.'";
+
+Object 	Waterskin "waterskin"
+ with	
+	name 'waterskin',
+	description
+	    "The waterskin is old and a bit stiff, but should still
+ 	    prove watertight.",
+	before [;
+	 Receive:
+	    if (noun == Fresh_Water) {
+		rfalse;
+	    } else {
+		print "It's called a _water_skin for a reason.^";		 
+		rtrue;
+	    }
+        ],
+ has	
+container open;
+
+Treasure Exotic_Flowers "bunch of exotic flowers"
+    with
+    name 'flowers',
+    description
+    "An array of beautifully-scented exotic flowers.";
+
+Treasure Coins "pile of coins"
+    with
+    name 'coins',
+    description
+    "A pile of coins of various precious metals - gold, silver and platinum.  A small fortune in fact.";
+
+Treasure Crown "crown"
+    with
+    name 'crown',
+    description
+    "The fine crown, worn by the lich king himself.  Solid gold and gem encrusted it is, and at least in your own opinion suits your noble profile well.";
+
+Treasure Ankh "ankh"
+    with 
+    name 'ankh',
+    description
+    "A fine home-made golden ankh, twisted from heavy gold wire with obvious skill and craftsmanship.";
+
+Treasure Pendant "pendant"
+    with
+    name 'pendant',
+    description
+    "A fine smoky quartz pendant, enclosed in a silver setting.  Worth a fortune based on the weight alone.";
+
+Treasure Gold_Wire "gold wire"
+    with
+    name 'gold' 'wire',
+    description
+    "A long, straight length of thick gold wire.";
+
+Treasure Bosuns_Whistle "bosuns whistle"
+    with
+    name 'bosuns' 'whistle',
+    description
+    "A bosuns whistle crafted from sterling silver, and polished to a mirror finish.",
+    before [;
+     blow:
+	if (real_location == Wreck) {
+	    print "You blow the bosuns whistle and, as they did in a past life, the zombie crew stands to attention.^";
+	    give Zombie_Crew ~aggressive;			  
+	    Zombie_Crew.description = "The zombie crew is currently standing to attention, awaiting the arrival of their long-lost bosun.";
+	    
+	    if (Zombie_Crew hasnt solved) {
+		score = score + 1;
+		give Zombie_Crew solved;
+	    }
+	    
+	    rtrue;
+	} else {
+	    "The whistle makes a piercing, authoritative sound.  No-one notices.";
+	}
+    ];
+
+Treasure Snuff_Box "snuff box"
+    with	
+    name 'snuff' 'box',
+    description
+    "A deeply engraved silver snuff box, held closed by a finely-wrought silver clasp.",
+    before [;
+     drop:
+	print "You get a bad feeling about doing that.  Something about the
+    	    snuff box makes you think you'll be needing it later.^";
+	rtrue;	
+     open:
+	print "Despite the apparently flimsy construction of the
+    	    clasp, it steadfastly defeats your best efforts at prising,
+    	    bending, and bending prising and cursing.  It may look like fine
+    	    silver, but it acts like it's made of the strongest steel in
+    	    generous quantities.";
+	rtrue;	
+    ],
+    has
+    openable;
+
+!==============================================================================!
+!   Not in the DM as such, but useful (a) to distinguish room definitions from
+!   those of ordinary objects in the file, and (b) to provide light everywhere
+!   (unless overruled). See DM §3.8.
+!
+Class   Room
+ with	
+   	cant_go "You can't go that way."
+ has	
+light;
+
+Class   Troll_Guarded_Room
+ with	
+   	cant_go "You can't go that way."
+ has	
+light;
+
+Class   Maze_Guarded_Room
+ with	
+   	cant_go "You can't go that way."
+ has	
+light;
+
+Class 	Precarious_Room
+ with	
+   	cant_go "You can't go that way."
+ has	
+light;
+
+Class	Underground_Room
+ with	
+   	cant_go "You can't go that way.";
+
+Class   Sailable
+ with	
+   	cant_go "You can't go that way by boat.",
+    	before [;
+	 Exit:
+	    if (real_location hasnt disembarkable) {
+		print "You step merrily out of the boat, and into the freezing water.  Your attempts to re-enter the boat merely capsize it, ensuring that it sinks like a stone.  Normally this would worry you, but for some reason you're singing an aria from Verdi right now.  A few minutes later, your frigid corpse follows the boat into the depths.^";
+		deadflag = true;
+		rtrue;
+	    }
+        ],
+ has	
+light; 
+
+!==============================================================================!
+!   As DM §7 and 10.
+!
+Room Golden_Beach "Golden Beach"
+    with 
+    name 'beach' 'sand' 'surf',        
+    description
+    "You are standing on a warm, sunlit beach.  Fine golden sand squeaks and flows under your feet; it is damp, hence the wet feet, and your being awake.^^Behind you, the
+    surf roars as waves surge and crash onto the rocks that
+    encircle you to the East, West and South.  To the North, a
+    steep path winds up a tussock-covered cliff.",
+    n_to Steep_Path,
+    u_to Steep_Path,
+    cant_go
+    "The breakers are towering metres into the air and
+    crashing onto the rocks.  You've never been a strong swimmer and you fear that testing
+    yourself in these conditions would ensure you never got
+    the chance to become one.";
+
+Room Steep_Path "Steep Path"
+    with 
+    name 'steep' 'path',
+    description
+    "You are at a fork in the path, which is now covered in smooth pebbly gravel.  It breaks off to the
+    NorthEast and NorthWest, and it plunges down the bank to
+    the South.  A strong wind whips along the ridge here.^^In the
+    distance to the NorthWest you can see a dead tree, towering over
+    the rolling hills and tussock.",
+    s_to Golden_Beach,
+    nw_to Hollow_Tree_Hill,
+    ne_to Dirt_Road_1;
+
+Room Dirt_Road_1 "Dirt Road"
+    with
+    name 'dirt' 'road',
+    description
+    "The steep path levels off into a gently sloping dirt road, which travels SouthWest to NorthEast.  In the same direction but far in the distance, you can see a small white house perched atop a jutting seam of rock.  The house is oddly reminiscent of Gran's cottage, featuring the same shocking pink roof and crooked stone chimney.",
+    sw_to Steep_Path,
+    ne_to Dirt_Road_2;
+
+Room Dirt_Road_2 "Dirt Road"
+    with
+    name 'dirt' 'road',
+    description
+    "The dirt road comes to an end here.  To the North is a rickety bridge, which climbs from two hefty posts sunk into the hard earth.  The bridge appears to terminate at the south end of the jutting rock seam.  To the East, the dirt road widens and becomes a well-used cart track, complete with deep wheel furrows.",
+    e_to Cart_Track_1,
+    n_to Rickety_Bridge,
+    sw_to Dirt_Road_1;
+
+Room Hedge_Gateway "Hedge Gateway"
+    with
+    name 'hedge' 'gateway',
+    description
+    "You are standing infront of a substantial hedge-lined gateway.
+    Obviously intended to impress, the hedge has clearly not seen
+    maintenance for a while now, and is dying off in some parts and
+    branching out in others.  Through the gateway to the North is a
+    plowed field; to the East is a smaller and less grandly presented
+    hay field.  A cart track heads off to the west.",
+    n_to Plowed_Field,
+    e_to Hay_Field,
+    w_to Cart_Track_3;
+
+Room Hay_Field "Hay Field"
+    with
+    name 'hay' 'field',
+    description
+    "You are surrounded by rushing, waving hay stalks as you push your
+    way into the hay field.  The field ripples with the wind, bowing
+    this way and that, and the air is thick with blowing seeds.  The
+    field has been partially harvested in the recent past, and there
+    are several large bales of hay present.^^To the north, a narrow
+    dirt path winds out of the hay field and into a green meadow.  You
+    can see the hedge gateway to the West.",
+    w_to Hedge_Gateway,
+    n_to Meadow_Path_1;
+
+Room Plowed_Field "Plowed Field"
+    with
+    name 'plowed' 'field',
+    description
+    "The smell of damp earth fills your nose as you tramp into the field, sinking inches into the soil with every step.  This field has been plowed, no more than a few weeks ago.  Weeds and grass are growing here and there but most of the soil is still exposed, and appears to be very rich and well aerated.^^A small pile of very round stones sits in one corner of the field; presumably these have been extricated during plowing.  The field is entirely fenced, and the only exit is back South through the hedge gateway.",
+    s_to hedge_gateway;
+
+Room Meadow_Path_1 "Meadow Path"
+    with
+    name 'meadow' 'path',
+    description
+    "This narrow meadow path winds North and South through ankle-length green grass.  A gentle breeze rustles the grass, and brightly-coloured butterflies flit overhead.",
+    n_to meadow_path_2,
+    s_to hay_field;
+
+Room Meadow_Path_2 "Meadow Path"
+    with
+    name 'meadow' 'path',
+    description
+    "The meadow path heads South alongside the plowed field, and bends NorthEast towards a clifftop.  The wind is slightly stronger here, smelling strongly of salt.",
+    ne_to Clifftop_Path_1,
+    s_to Meadow_Path_1;
+
+Room Clifftop_Path_1 "Clifftop Path"
+    with
+    name 'clifftop' 'path',
+    description
+    "The view from the path is stunning; to the East the sea stretches to the horizon, blue-green and calm, with white breakers pounding the island hundreds of feet below.  The sea breeze blows strongly in your face, and the sunlight reflecting from the white rocks dazzles you.^^To the North, you see a large and apparently healthy oak tree, and to the SouthWest the path back through the meadow.",
+    n_to Windswept_Path,
+    sw_to Meadow_Path_2;
+
+Room Windswept_Path "Windswept Path"
+    with
+    name 'windswept' 'path',
+    description 
+    "The path continues North to South along the clifftop.  The wind increases here to a near gale blowing in from the sea.",
+    n_to Clifftop_Path_2,
+    s_to Clifftop_Path_1,
+    d_to Cliff_Face,
+    before [ way;
+     Go: way = location.(noun.door_dir)();
+	if ((way ofclass Precarious_Room)) {
+	    if (Rope hasnt tied) {
+		print "You attempt to climb down the cliff face, but slip and fall face-first for several hundred feet.  Just long enough for you to wish you hadn't, in fact.^";
+		deadflag = true;
+		rtrue;
+	    }
+	}
+    ];
+
+Precarious_Room Cliff_Face "Cliff Face"
+    with
+    name 'cliff' 'face',
+    description
+    "You are standing on a small ledge that juts out from the clif face, with a rope dangling infront of you.  The view is almost worth the terror involved, with the sunlight glinting off the waves pounding into the cliffs below.",
+    u_to Windswept_Path;
+
+Room Clifftop_Path_2 "Clifftop Path"
+    with
+    name 'clifftop' 'path',
+    description
+    "The path wanders North to South, veering dangerously close to the clifftop in places.  A few stretches of path have actually crumbled over the cliff; the rock below the edge of the cliff seems softer than at the top.^^To the West, a small grass slope leads to a mossy stone well.",
+    w_to Well,
+    n_to Clifftop_Path_3,
+    s_to Windswept_Path;
+
+Room Clifftop_Path_3 "Clifftop Path"
+    with
+    name 'clifftop' 'path',
+    description
+    "The path winds back South, and also down to the NorthWest where it widens and joins a long stone pathway.  far in the distance to the NorthWest you can see what looks like a rocky outcrop, or perhaps a low stone wall.",
+    nw_to Flagstone_Path_2,
+    s_to Clifftop_Path_2;
+
+Room Well "Well"
+    with
+    name 'well',
+    description
+    "You are standing beside an old, moss-covered stone well.  A number of the stones used to construct the well are missing, presumably tumbled into the black depths of the well itself.  Above the well is a wooden brace, upon which sits a winch.  To your surprise the wooden winch is in fairly good condition.^^To the East you can see the path running along the clifftop, and to the SouthWest is a spreading meadow of buttercups, clover and grass.",
+    e_to Clifftop_Path_2,
+    sw_to Meadow_1;
+
+Room Meadow_1 "Meadow"
+    with
+    name 'meadow',
+    description
+    "Despite its general state of decrepitude, this island boasts
+    several particularly lovely locations.  This meadow is one of
+    them, meandering gently over rolling ground to the West.  A gentle
+    breeze - seemingly warmer than on the clifftop - stirs the acres
+    of buttercups and clover flowers, filling the air with beautiful
+    scents.  Bumblebees buzz around harmlessly, and dragonflies swoop
+    and hover overhead.^^To the NorthEast you can make out the top of
+    a well.",
+    ne_to Well,
+    w_to Meadow_2;
+
+Room Meadow_2 "Meadow"
+    with
+    name 'meadow',
+    description
+    "The lovely scented meadow spreads back to the East, and continues for several acres more around you.  To the North however, things look a little less picturesque.  A tall, incredibly dense copse of trees casts a deep shadow over the meadow.  It may be your imagination playing tricks on you, but you can't help but notice that the dragonflies and bumblebees are studiously avoiding that shadow.",
+    n_to Copse_1,
+    e_to Meadow_1;
+
+Room Copse_1 "Dense Copse"
+    with
+    name 'dense' 'copse',
+    description
+    "The copse here is very dense, very dark, and highly unpleasant.  The branches close in from every side, and you have to twist and turn to avoid the brambles clutching at your clothing and belt.  Very little light filters in through the canopy, and the lovely earthy smell you associate with forests is instead a musty, mouldy oppression.^^To the South you can see a little light filtering in from the meadow, and the copse continues to the West.",
+    w_to Copse_2,
+    s_to Meadow_2;
+
+Room Copse_2 "Dense Copse"
+    with
+    name 'dense' 'copse',
+    description
+    "You are standing in a dense copse of trees.  You can see a little light filtering in from the North and the West.  The copse extends towards the East and becomes even darker and less welcoming.  You're not certain given the poor light level and thick growth of creepers, but you think you see thorns.",
+    e_to Copse_1,
+    n_to Steep_Path_2,
+    w_to Gentle_Path_2;
+
+Room Gentle_Path_2 "Gentle Path"
+    with
+    name 'gentle' 'path',
+    description
+    "A gently-sloping path meanders East to West here, descending very slightly towards the East.  To the South is a looming sheer stone cliff.  To the East the path ends abruptly at a wall of trees; the copse doesn't look entirely impenetrable but you rather wish that you could convince yourself that it did.  Certainly, it looks dark, dense, and infrequently traveled.",
+    e_to Copse_2,
+    w_to Gentle_Path_1;
+
+Room Gentle_Path_1 "Gentle Path"
+    with
+    name 'gentle' 'path',
+    description
+    "A gentle dirt path travels East to West here.  To the West it descends into an orderly grove of trees, and to the East it heads to a much wilder looking forest in the distance.  To the SouthEast you can see the Northenmost cliff formed by the large ridge of rock.",
+    w_to Apple_Orchard,
+    e_to Gentle_Path_2;
+
+Room Apple_Orchard "Apple Orchard"
+    with
+    name 'apple' 'orchard',
+    description
+    "You are standing in the middle of an orchard of apple trees.  The trees are quite overgrown, and are in definite need of a prune.  They are beginning to bud; in a few weeks this orchard will be a wall of apple-blossom.^^To the West, on a crest overlooking the orchard, is a small wooden shack with a lopsided tin-plate chimney.  To the North the orchard continues, but with what looks to be a different type of tree.  A path slopes up towards the East.",
+    n_to Pear_Orchard,
+    w_to Canning_Shack,
+    s_to Hill,
+    e_to Gentle_Path_1;
+
+Room Canning_Shack "Canning Shack"
+    with
+    name 'canning' 'shack',
+    description
+    "This small shack is full to bursting with rusted cans and dusty jars; there is waist-high bench that encircles the shack with the exception of the doorway.  There is a window in the West wall, which looks over the Western cliffs of the island and out across the blue-green ocean.  The only exit is to the East, back to the orchard.",
+    e_to Apple_Orchard;
+
+Room Pear_Orchard "Pear Orchard"
+    with
+    name 'pear' 'orchard',
+    description
+    "This orchard is less densely planted, and seems populated entirely with pear trees.  The pears have been planted more recently than the apple trees, and are waist-high and straggly.^^To the NorthEast, a flight of wooden stairs heads Down the side of the Northernmost cliff of the island; from this distance it appears slightly rotten and is making an unsettling groaning sound.  To the South you can see the larger, older trees of the apple orchard.",
+    s_to Apple_Orchard,
+    d_to Wooden_Stairs,
+    ne_to Wooden_Stairs;
+
+Room Wooden_Stairs "Wooden Stairs"
+    with
+    name 'wooden' 'stairs',
+    description
+    "You are standing on a flight of wooden stairs, suspended on mostly-rotten logs that are wedged into roughly hewn holes in the cliff face.  To the North you can see down to the Northern beach, which appears as rocky and inhospitable as the Southern beach where you arrived.^^There is one small gap in the rocks, in which you can see the wreckage of a small boat.  To your immense concern, the groaning sound you thought originated with the stairs seems to be emanating from the crew of the ship.  They are standing in the water, scrubbing boards with imaginary brushes, seemingly untroubled by the fact that they appear years dead.",
+    u_to Pear_Orchard,
+    sw_to Pear_Orchard,
+    n_to Wreck,
+    d_to Wreck;
+
+Room Wreck "Wreck"
+    with
+    name 'wreck',
+    description
+    "The wreck of a small sailing ship is submerged, waist deep, in the only part of the beach accessible from the sea.  The ship appears to have been dashed to pieces on the rocks while attempting to land, and the debris has been washed up by the current flowing between the rocks.^^To the East you can see another stretch of pebble beach, but a large crop of jagged rocks bars your way in that direction.",
+    u_to Wooden_Stairs,
+    s_to Wooden_Stairs;
+
+
+Room Cold_Beach "Cold Beach"
+    with
+    name 'cold' 'beach',
+    description
+    "Standing on the pebbles of this small stretch of accessible beach, you can see the tips of what appear to be the mast of a sailing ship, sans sails, to the West.  Your way is blocked in that direction by a large outcrop of jagged rocks.^^To the South, a steep path leads up the cliff, and another steep path ascends to the SouthEast.",
+    s_to Steep_Path_1,
+    ne_to Steep_Path_3;
+
+Room Steep_Path_1 "Steep Path"
+    with
+    name 'steep' 'path',
+    description
+    "This path is dangerously steep; you can only keep your footing by grabbing generous handfuls of the sharp-edged tussock sprouting from the rock.  It continues to the North where it levels out onto the beach, and to the South where it continues climbing.",
+    n_to Cold_Beach,
+    s_to Steep_Path_2;
+
+Room Steep_Path_2 "Steep Path"
+    with
+    name 'steep' 'path',
+    description
+    "You are standing on a path that heads steeply down towards the North, and is backed on the South by a dense looking forest.  To the North you can see a pebble beach, and what might be the mast of a sailing ship.  The copse to the South looks dense and uninviting, choked with bushes, creepers and what look like brambles to boot.",
+    n_to Steep_Path_1,
+    s_to Copse_2;
+
+Room Steep_Path_3 "Steep Path"
+    with
+    name 'steep' 'path',
+    description
+    "This path is treacherous, and very slow going.  To the SouthWest it leads down to the beach, where you can see something that looks like an old sailing ship - or at least the masts thereof, without any sign of rigging or sail.  To the East, the path levels out and reaches a grass meadow.",
+    sw_to Cold_Beach,
+    e_to Grass_Meadow;
+
+Room Grass_Meadow "Grass Meadow"
+    with
+    name 'grass' 'meadow',
+    description
+    "Standing in the middle of an untended grass meadow, you can only just see above the green stalks that in most places grow to just under your chin.  You can hear birds singing, and the rustling of what may be fieldmice about your feet, if only you could see them to tell.^^Immediately to the North (so watch your step) is the clifftop that marks the Northern extent of the island; to the South there is a barely-visible stony outcrop, and from the East a lovely smell of flowers is wafting on the breeze.  To the SouthEast the grass appears to thin out.",
+    s_to Cairn_Mound,
+    e_to Flower_Field,
+    w_to Steep_Path_3,
+    se_to Flagstone_Path_1;
+
+Room Cairn_Mound "Cairn Mound"
+    with
+    name 'cairn' 'mound',
+    description
+    "You find yourself standing at the base of not an outcrop of rock, but an ancient stone cairn, measuring a dozen feet on either side.  Although you have observed that this island is in a state of disuse, this place seems altogether older than any of the other installations here.  Ancient runes, meaningless now, have been carved into the cairn walls and the flagstones surrounding it have been worn down by the feet of thousands of pilgrims and relatives of the deceased.^^To the East there is a path of flagstones, and to the North a wall of waving grass.  From the NorthEast you can smell fragrant flowers.",
+    n_to Grass_Meadow,
+    ne_to Flower_Field,
+    e_to Flagstone_Path_1;
+
+Room Flagstone_Path_1 "Flagstone Path"
+    with
+    name 'flagstone' 'path',
+    description
+    "An ancient flagstone path runs off to the South.  The stones here are immense, each at least six feet by three feet and very well worn.  No-one has tended the path in a while; weeds and small bushes are poking out of the thine gaps between the stones.  To the West stands what looks to be a small stone outcrop, and to the North a fragrant-smelling field.",
+    n_to Flower_Field,
+    w_to Cairn_Mound,
+    nw_to Grass_Meadow,
+    s_to Flagstone_Path_2;
+
+Room Flagstone_Path_2 "Flagstone Path"
+    with
+    name 'flagstone' 'path',
+    description
+    "You are standing at one end of a long flagstone path which extends to the North.  The flagstones at your feet are small but obviously of careful manufacture, being square and quite smooth, even though they have been worn concave through heavy use.  To the SouthEast, a path extends up along the clifftop.",
+    n_to Flagstone_Path_1,
+    se_to Clifftop_Path_3;
+
+Room Flower_Field "Field of Flowers"
+    with 
+    name 'field' 'of' 'flowers',
+    description
+    "Standing on the NorthEastern tip of the Island, you see the ocean stretching away on both sides, and smell the heady, almost perfumed, scent of the exotic flowers growing wild in this small meadow.^^The meadow spreads to the West where it ends in a wall of grass, and ends in a stone path to the South.  To the SouthWest you can see what may be a low wall of stone.",
+    s_to Flagstone_Path_1,
+    w_to Grass_Meadow,
+    sw_to Cairn_Mound;
+
+Room Cart_Track_1 "Cart Track"
+    with
+    name 'cart' 'track',
+    description
+    "This cart track heads West to the dirt road, and bends NorthEast towards a field.  You can see from the ruts in the ground that the track has been heavily used, but the presence of flowering weeds in the ruts and the absence of any animal droppings suggests that it saw its last cart some time ago.",
+    w_to Dirt_Road_2,
+    ne_to Cart_Track_2;
+
+Room Cart_Track_2 "Cart Track"
+    with
+    name 'cart' 'track',
+    description
+    "The cart track continues SouthWest to NorthEast.  You can see the field more clearly from here and it looks recently plowed, despite the fact that the cart track is in a state of disuse.",
+    sw_to Cart_Track_1,
+    ne_to Cart_Track_3;
+
+Room Cart_Track_3 "Cart Track"
+    with
+    name 'cart' 'track',
+    description
+    "The cart track begins here; there is a broken-down cart piled by the side of the track that appears to have been scavenged for firewood at some point, as evidenced by deep axe marks and missing chunks of wood.  To the East is a hedge-lined gateway.",
+    sw_to Cart_Track_2,
+    e_to Hedge_Gateway;
+
+Room Rickety_Bridge "Rickety Bridge"
+    with
+    name 'rickety' 'bridge',
+    description
+    "A rickety wooden span bridge stretches up to to the North, terminating at the south end of the jutting rock seam.  The bridge is swaying gently in the wind, ropes moaning and creaking as it does so.  Many spans are missing, and the entire assembly seems quite unsafe.",
+    n_to Steep_Slope,
+    u_to Steep_Slope,
+    s_to Dirt_Road_2,
+    before [ way;
+     Go: way = location.(noun.door_dir)();
+	if (way ofclass Troll_Guarded_Room) {
+	    if (Troll has hungry) {
+		print "Before you can take your second step onto the bridge, the troll siezes you, bashes you repeatedly on the ground, and commences to eat you.  This would be gruesome, if not for the fact that the aforementioned bashing has already proved fatal.^";
+		deadflag = true;
+		rtrue;
+	    }
+	}
+    ];
+
+Troll_Guarded_Room Steep_Slope "Steep Slope"
+    with
+    name 'steep' 'slope',
+    description
+    "You are standing on a steep stone slope, worn smooth by years of abrasion by the wind which stronger up here, and engaged in a similar battle of abrasion with your ankles.  Below and to the South is the rickety span bridge with its now-satiated troll guardian; slurping munching sounds are still emanating from under the bridge.^^The slope curves up and to the NorthEast, where there is a large dry-stone construction comprised of massive blocks, each the size of a large refrigerator.",
+    d_to Rickety_Bridge,
+    s_to Rickety_Bridge,
+    u_to Maze,
+    ne_to Maze;
+
+Room Maze "Maze"
+    with
+    name 'maze',
+    description
+    "The stone maze is cold, damp and almost completely dark.  The only useful light filters in from the gaps between the walls, which seem an awful lot taller than they did on the outside.  Each wall appears like the other, and there are no distinguishing marks.  Even the direction of passageways is difficult to determine because of the crazy shadows cast by the dim light.^^The maze continues to the North (at least you're fairly sure that it does), and back down the the SouthWest is the steep slope.",
+    n_to Stone_Stairs_1,
+    sw_to Steep_Slope,
+    d_to Steep_Slope,
+    before [ way;
+     Go: way = location.(noun.door_dir)();
+	if (way ofclass Maze_Guarded_Room) {
+	    if (IndirectlyContains(player, Chalk) == false) {
+		print "You blithely wander into the maze without any way whatsoever of marking your way.  Several days later, blunding about in confusion, you succumb to thirst and die.^";
+		deadflag = true;
+		rtrue;
+	    } else     
+	    {
+		if (Maze hasnt solved) 
+		{
+		    score = score + 1;
+		    give Maze solved;		    
+		}				    
+	    }		
+	}
+    ];
+
+Maze_Guarded_Room Stone_Stairs_1 "Stone Stairs"
+    with
+    name 'stone' 'stairs',
+    description
+    "You are standing to the North of the maze at the base of a gigantic flight of stone stairs which head Northerly - and steeply upwards - towards the white house you saw from a distance.  Now that you can see it more closely, this house doesn't just resemble your Grandmother's cottage, it is identical to it.  Even the door is painted the same questionable shade of turquoise.",
+    u_to Stone_Stairs_2,
+    n_to Stone_Stairs_2,
+    s_to Maze;
+
+Room Stone_Stairs_2 "Stone Stairs"
+    with
+    name 'stone' 'stairs',
+    description
+    "You are nearing the top of the stone staircase.  Immediately above you is the white house, and below and to the South of you are more stairs leading back to the maze.^^You can see for miles from this vantage point; far in the distance to the North you can see a shipwreck lying waist-deep in the surf.  To the NorthEast is a huge field of flowers, and to SouthWest a large field that appears to have been recently plowed.",
+    u_to House,
+    n_to House,
+    s_to Stone_Stairs_1,
+    d_to Stone_Stairs_1;
+
+Room House "House"
+    with
+    name 'house',
+    describe [;
+	print "You have arrived panting at the white house.  It is an 1800s cottage, lovingly and subtley modernised with large glass bay windows and electric lighting.  It is definitely Gran's cottage - her questionable taste extends from the turquoise door to the pink roof to, now that you can see it clearly, the garishly painted border of flowers that encircles the eaves.^",	      
+	    deadflag = 2;
+    ];
+
+Room Hollow_Tree_Hill "Hollow Tree Hill"
+    with 
+    name 'hollow' 'tree' 'hill',
+    description
+    "The gravel path winds its way North, past a gigantic hollow tree that has grown atop a small hill.  Dead for decades, its pale grey remains loom over the surrounding terrain.",
+    n_to Gravel_Path_1,
+    se_to Steep_Path;
+
+Room Gravel_Path_1 "Gravel Path"
+    with
+    name 'gravel path',
+    description
+    "The gravel path turns East, running along the South bank of a small lake.  The lake itself is very still, with water gently lapping up the bank.  In the middle of the lake is a small island, utterly devoid of plant life or any other feature of interest, at least from this angle.",
+    e_to Gravel_Path_2,
+    s_to Hollow_Tree_Hill;
+
+Room Gravel_Path_2 "Gravel Path"
+    with
+    name 'gravel' 'path',
+    description
+    "The gravel path curves to the NorthEast, where in the distance you can see it meanders along the East bank of the lake.",
+    ne_to Lakeside_Path_1,
+    w_to Gravel_Path_1;
+
+Room Lakeside_Path_1 "Lakeside Path"
+    with
+    name 'lakeside' 'path',
+    description
+    "The lakeside path curves off to the SouthWest, where it winds back down to the beach via the Hollow Tree.^^To the North, the path continues by the East bank of the lake.  You can see the island in the centre of the lake from here.  From this side, you can see that the island once sported at least a few small trees, but these have been felled in antiquity and have never regrown.^^To the East, you can see a rickety span bridge stretching overhead to a steep rocky slope.",
+    n_to Lakeside_Path_2,
+    sw_to Gravel_Path_2;
+
+Room Lakeside_Path_2 "Lakeside Path"
+    with
+    name 'lakeside' 'path',
+    description
+    "Here, the lakeside path continues North to South, still following the East bank of the lake closely.  To the East is a sheer wall of rock, anchored to which is the end of the span bridge you can see to the SouthEast.",
+    n_to Lakeside_Path_3,
+    s_to Lakeside_Path_1;
+
+Room Lakeside_Path_3 "Lakeside Path"
+    with
+    name 'lakeside' 'path',
+    description
+    "You are standing at the Northernmost extend of the lakeside path.  To the South the path wanders under the shadow of a cliff, along the East bank of the lake.  To the West you can see the lake and its Northernmost bank.  To the North the path narrows and becomes little more than a bare dirt track.^^To the NorthWest you can see an old, damp jetty sticking out into the lake.  Even at this distance faint creaks and groans can be heard emanating from the rotten wood; it looks as though the jetty has seen better days.  Years, even.",
+    nw_to Jetty,
+    n_to Swamp_1,
+    s_to Lakeside_Path_2;
+
+Sailable Jetty "Ancient Jetty"
+    with
+    name 'ancient' 'jetty',
+    description
+    "As you suspected from a distance, this jetty has seen better years.  Clambering about it, you can see that many of the planks are mising, and the posts supporting them are sticking at odd angles from the coarse grey sand in which they're sunk.  The rotten assmebly is constantly shifting with your weight, the breeze and the lake lapping at its base, creaking and groaning all the while.^^To the North you see a boathouse in a slightly better state of repair, with tattered remnants of scarlet paint hanging from dessicated boards.  To the South is the lake; from this vantage point you can see to your surprise that at least part of the island is obscured by spray, despite the pleasantly calm weather.",
+    n_to Boathouse,
+    s_to Lake_1,
+    se_to Lakeside_Path_3,
+    before [ way;
+     Go: way = location.(noun.door_dir)();
+	if (way ofclass Sailable) {
+	    if (IndirectlyContains(Boat, player) == false) {
+		print "You wade into the water a little way and reconsider.  It is icy, icy cold - far colder than the weather would have you suspect.^";
+		rtrue;
+	    }
+	}
+    ],
+    has
+    disembarkable;
+
+Sailable Lake_1 "Freezing Lake"
+    with
+    name 'freezing' 'lake',
+    description
+    "You are afloat the lake, in its NorthEastern corner.  You can see the island to the SouthWest, but can't see any point shallow enough to moor your boat with a hope of retrieiving it after a few hour's worth of steady leaking.  Seen up close, the island is forbiddingly steep-sided.  There is a faint current pushing the boat West.",
+    w_to Lake_8,
+    s_to Lake_2,
+    n_to Jetty;
+
+Sailable Lake_2 "Freezing Lake"
+    with
+    name 'freezing' 'lake',
+    description
+    "You are bobbing to the East of the island, near the Eastern bank of the lake.  You still can't see a good place from which to approach the island.  The current persists, causing you to drift Northwards if you leave the boat to its own devices.",
+    n_to Lake_1,
+    s_to Lake_3;
+
+Sailable Lake_3 "Freezing Lake"
+    with
+    name 'freezing' 'lake',
+    description
+    "You have paddled to the SouthEastern corner of the lake.  From here the island appears as forbidding and inaccessible as ever, and the lake water as cold.",
+    w_to Lake_4,
+    n_to Lake_2;
+
+Sailable Lake_4 "Freezing Lake"
+    with
+    name 'freezing' 'lake',
+    description
+    "Alongside the Southern bank of the lake, you can clearly see the hollow tree behind the path on the bank to the South, and the island directly to the North.  Sadly - although unsurprisingly - the island doesn't seem any more approachable from here.",
+    e_to Lake_3,
+    w_to Lake_5;
+
+Sailable Lake_5 "Freezing Lake"
+    with
+    name 'freezing' 'lake',
+    description
+    "In the SouthWestern corner of the lake, the boat starts to bob more noticeably than before.  As before there is a slight current which seems to be flowing from the North, causing more water than usual to find its way into the boat.  Nothing you can't bale out again, but feeling wet, cold and tired is becoming a little too familiar.",
+    n_to Lake_6,
+    e_to Lake_4;
+
+Sailable Lake_6 "Freezing Lake"
+    with
+    name 'freezing' 'lake',
+    description
+    "The current is more noticeable here on the West side of the island than it was further south.  You can hear rushing water in the distance to the NorthEast, and the further North you head, the harder it becomes to paddle.  Like the bailing, it's nothing you can't handle, but you find yourself fervently wishing that you didn't have to handle it.",
+    n_to Lake_7,
+    s_to Lake_5;
+
+Sailable Lake_7 "Freezing Lake"
+    with
+    name 'freezing' 'lake',
+    description
+    "From the NorthWestern corner of the lake you can see that the current is emanating from the Northern face of the island and flowing counter-clockwise around it, although you can't see any details of the island itself, as the East side of the island is partially obscured by spray.  You can feel the boat slipping away south, and it takes some effort just to remain stationary.",
+    e_to Lake_8,
+    s_to Lake_6;
+
+Sailable Lake_8 "Freezing Lake"
+    with
+    name 'freezing' 'lake',
+    description
+    "As you approach the North face of the island, the current increases in strength, heading directly West.  You can see a natural spring gushing from the North face of the island, which appears to be creating the current.  Fountains of spray curtain the Northern face, partially obscuring the sun and creating shimmering rainbow-coloured curtains.  You can feel the roaring of the water as much in your chest as your ears.  It takes almost all your strength to keep the boat from being swept away, as you bail intermittently with one hand.^^Directly adjacent the spring and almost directly South of your current location is a small flat sandy spit, with a vaguely upright log sunk in it.",
+    w_to Lake_7,
+    e_to Lake_1,
+    s_to Island;
+
+Sailable Island "Island"
+    with
+    name 'island',
+    description
+    "Upon close inspection, you can see that the island itself is very small; a granite column that rises out of the lake, with the Northern face worn down to the water-level by erosion.  Nestled on the Northern face you are mostly sheltered from the water, but the roaring from the natural spring still reverberates in your ears, and the fresh-water spray in the air is surprisingly welcome after your recent exertion.  There are a few long-dead tree stumps high on the peak of the granite mound, their thin roots cracking the rock.  These appear to have been felled decades ago.^^There is a small cave entrance in the rocks a few yards past the sand; it opens almost vertically Down.",
+    d_to Cave,
+    n_to Lake_8,
+    before [ way;
+     Go: way = location.(noun.door_dir)();
+	if (way ofclass Sailable) {
+	    if (IndirectlyContains(Boat, player) == false) {
+		print "You wade into the water a little way and reconsider.  It is icy, icy cold - far colder than the weather would have you suspect.^";
+		rtrue;
+	    }
+	}
+    ],
+    has
+    disembarkable;
+
+Underground_Room Cave "Cave"
+    with
+    name 'cave',
+    description
+    "You are standing under a trapdoor in a small cave that seems to have functioned as a home away from home for someone, a long time ago.  The ceiling is soot-stained, and there is a mark on the floor in the middle of the room that may once have been a fire.  The walls and floor have been roughly hewn with a pick-axe or similar tool.  Courtesy the trap-door keeping out the spray, this room is surprisingly dry and warm for a long-abandoned cave.  At the base of the trapdoor is a pile of rotten material that may once have been a rope ladder.^^There is a small tunnel, barely large enough to crawl through, in the Southern face of the cave.  The only other way out is to clamber back up through the trapdoor.^^Your progress is very slow as you have only the light from the old sailor's pipe to guide you, and the ground is quite uneven.",
+    s_to Tunnel,
+    u_to Island;
+
+Underground_Room Tunnel "Tunnel"
+    with
+    name 'tunnel',
+    description
+    "The tunnel is hard going; it was clearly mined by someone more accustomed to hard tack and water than to Devonshire teas.  To the North the tunnel returns to the cave; to the South it appears to open out a little.  The ground is constantly trembling with the force of the natural spring which sounds like it's quite nearby.",
+    s_to Mine_Face,
+    n_to Cave;
+
+Underground_Room Mine_Face "Mine Face"
+    with
+    name 'mine' 'face',
+    description
+    "You are standing - or to be more accurate, crouching - at
+    a long-abandoned mine face.  It extends several yards from the
+    North wall, from which the small tunnel emerges.  The noise from
+    the nearby underground stream is immense.  The rock here glistens
+    with opalescent veins, and water is slowly trickling from cracks
+    in the wall down to cracks in the floor.",
+    n_to Tunnel;
+
+Room Swamp_1 "Swamp"
+    with
+    name 'swamp',
+    description
+    "The ground here becomes much soggier, with pools of water to shin-deep here and there.  The water itself is brown and brackish, and mosquitoes buzz around your face.  To the West the side of the jetty sticks out overhead, and the swamp continues on to the North.",
+    n_to Swamp_2,
+    s_to Lakeside_Path_3;
+
+Room Swamp_2 "Swamp"
+    with name 'swamp',
+    description
+    "The swamp is a little drier here than it looks further south, but is still brackish, full of knee-deep holes masquerading as shallow puddles, and clouds of whining bitining mosquitos.^^To the South is more primordial-looking swamp, and to the North a small hill.",
+    n_to Hill,
+    s_to Swamp_1;
+
+Room Hill "Hill"
+    with name 'hill',
+    description
+    "You are standing on a small hill, no more than a few dozen feet above the surrounding ground.  To the South, you can see a spread of foul-smelling swamp, and to the North, a far more inviting and orderly-looking thicket of trees.  In the distance to the East, you can see the cottage so like your Grandmother's, perched atop that apparently inaccessible ridge of rock.",
+    n_to Apple_Orchard,
+    s_to Swamp_2;
+
+Room Boathouse "Boathouse"
+    with
+    name 'boathouse',
+    description
+    "You are standing at the top of an old, slippery boat ramp.  Above and around you looms an ancient boathouse, in fairly poor condition but surviving better than the jetty.  A few strips of scarlet paint hang down from the entrance, and you can still smell a faint air of varnish in the air.  At the top of the Northern wall of the is a grimy, cracked window that lets a pale shaft of light into the back of the boathouse.  Sitting in the shaft of light is a heavily constructed timber workbench and a collapsed wooden chair.  To the South is the ancient jetty.",
+    s_to Jetty;
+
+Include "Grammar";
+
+Extend "pick" * edible -> Take;
