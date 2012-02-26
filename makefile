@@ -18,4 +18,4 @@ compile:
 	inform -S -s witching1.inf
 
 run:
-	frotz -Z 2 witching1.z5
+	frotz -Z 2 -p -d -w 80 -h 25 witching1.z5
